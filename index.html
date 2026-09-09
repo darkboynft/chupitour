@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chupitour — mi ruta de chupitos por España</title>
+<meta name="description" content="Inventario visual de vasos de chupito de recuerdo por municipio de España, con vista de lista y de mapa.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-top">
+      <span class="wordmark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 3H18L16 15C15.7 17 14 19 12 19C10 19 8.3 17 8 15L6 3Z" fill="#17B8A6"/>
+          <path d="M6 3H18" stroke="#241B2F" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M12 19V21M9 21H15" stroke="#241B2F" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Chupitour
+      </span>
+      <button id="lock-btn" class="lock-btn" type="button">🔒 Panel</button>
+    </div>
+    <h1>Un chupito por cada pueblo</h1>
+    <p class="tagline">La colección de vasos de chupito de recuerdo, pueblo a pueblo, con su sitio en el mapa.</p>
+
+    <div class="hero-card">
+      <svg class="hero-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 3H18L16 15C15.7 17 14 19 12 19C10 19 8.3 17 8 15L6 3Z" fill="#FFC93C"/>
+        <path d="M6 3H18" stroke="#241B2F" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M12 19V21M9 21H15" stroke="#241B2F" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <div class="hero-stats">
+        <div class="stat-row">
+          <span id="stat-count" class="stat-count">0</span>
+          <span id="stat-of" class="stat-of">de 0 municipios</span>
+        </div>
+        <div class="progress-track">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-toggle" role="group" aria-label="Cambiar vista">
+      <button id="btn-view-list" type="button" aria-pressed="true">📋 Lista</button>
+      <button id="btn-view-map" type="button" aria-pressed="false">🗺️ Mapa</button>
+    </div>
+  </header>
+
+  <section class="controls">
+    <input id="search-input" class="search-input" type="search" placeholder="Buscar municipio…" aria-label="Buscar municipio">
+    <div class="chip-group" role="group" aria-label="Filtrar por estado">
+      <button class="chip" type="button" data-filter="todos" aria-pressed="true">Todos</button>
+      <button class="chip" type="button" data-filter="conseguidos" aria-pressed="false">Conseguidos</button>
+      <button class="chip" type="button" data-filter="pendientes" aria-pressed="false">Pendientes</button>
+    </div>
+    <select id="ccaa-select" class="ccaa-select" aria-label="Filtrar por comunidad autónoma">
+      <option value="todas">Todas las comunidades</option>
+    </select>
+  </section>
+
+  <main id="list-view" aria-live="polite"></main>
+
+  <section id="map-view">
+    <div class="map-toolbar">
+      <label class="map-toggle-pending">
+        <input type="checkbox" id="show-pending-map">
+        Mostrar también pendientes
+      </label>
+    </div>
+    <div id="map-container"></div>
+  </section>
+
+  <footer>Datos geográficos: INE / IGN (2023), vía dataset público Soft Line Geo DB · Mapa: © colaboradores de OpenStreetMap</footer>
+</div>
+
+<div id="modal-overlay" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h2 id="modal-title">Acceder al panel</h2>
+    <p>Introduce la contraseña para editar cantidades. Se valida al guardar cada cambio.</p>
+    <input id="modal-password" type="password" placeholder="Contraseña" autocomplete="off">
+    <div class="modal-actions">
+      <button id="modal-cancel" class="btn" type="button">Cancelar</button>
+      <button id="modal-confirm" class="btn btn-primary" type="button">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="status-toast" class="status-toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
