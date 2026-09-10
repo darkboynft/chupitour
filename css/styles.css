@@ -332,6 +332,20 @@ select.ccaa-select{
 
 .muni-chip.just-saved{ animation: pop .5s ease; }
 
+.confetti-piece{
+  position: fixed;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 70;
+  animation: confetti-fall .9s ease-out forwards;
+}
+@keyframes confetti-fall{
+  0%{ transform: translate(0,0) rotate(0deg); opacity: 1; }
+  100%{ transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+}
+
 @keyframes pop{
   0%{ transform: scale(1); }
   35%{ transform: scale(1.15); }

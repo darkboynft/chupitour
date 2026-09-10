@@ -290,6 +290,7 @@
       const btn = chip.querySelector(".muni-save");
       btn.addEventListener("click", async () => {
         const val = Math.max(0, parseInt(input.value, 10) || 0);
+        const eraPrimero = cantidad === 0 && val > 0;
         btn.textContent = "…";
         const ok = await saveCount(m.id, val);
         btn.textContent = "Guardar";
@@ -302,6 +303,7 @@
           toast(`Guardado: ${m.nombre} (${val})`);
           updateHeaderStats();
           if (mapInitialized) refreshMapMarkers();
+          if (eraPrimero) celebrate(chip);
         }
       });
     } else {
@@ -363,6 +365,27 @@
 
     if (els.showPendingMap.checked && !leafletMap.hasLayer(pendingLayer)) pendingLayer.addTo(leafletMap);
     if (!els.showPendingMap.checked && leafletMap.hasLayer(pendingLayer)) leafletMap.removeLayer(pendingLayer);
+  }
+
+  const CONFETTI_COLORS = ["#FF5D73", "#17B8A6", "#FFC93C", "#8E7CC3"];
+  function celebrate(anchorEl){
+    const rect = anchorEl.getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+    for (let i = 0; i < 14; i++){
+      const piece = document.createElement("div");
+      piece.className = "confetti-piece";
+      piece.style.left = originX + "px";
+      piece.style.top = originY + "px";
+      piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 60 + Math.random() * 70;
+      piece.style.setProperty("--dx", (Math.cos(angle) * dist) + "px");
+      piece.style.setProperty("--dy", (Math.sin(angle) * dist - 20) + "px");
+      piece.style.setProperty("--rot", (Math.random() * 360) + "deg");
+      document.body.appendChild(piece);
+      piece.addEventListener("animationend", () => piece.remove());
+    }
   }
 
   let toastTimer = null;
