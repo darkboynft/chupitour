@@ -20,16 +20,21 @@
     bindGlobalControls();
 
     try{
-      const [geoRes, countsRes] = await Promise.all([
-        fetch("data/municipios.json").then(r => r.json()),
-        fetchCounts()
-      ]);
-      GEO = geoRes;
-      COUNTS = countsRes;
+      GEO = await fetch("data/municipios.json").then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      });
     }catch(err){
-      console.error(err);
-      toast("No se pudieron cargar los datos. Revisa data/municipios.json y la configuración.");
+      console.error("Error cargando municipios.json:", err);
+      toast("No se pudo cargar data/municipios.json. Revisa que el archivo esté en el repo.");
       GEO = { comunidades: [] };
+    }
+
+    try{
+      COUNTS = await fetchCounts();
+    }catch(err){
+      console.error("Error cargando datos de Google Sheets:", err);
+      toast("No se pudieron cargar las cantidades desde Google Sheets. Revisa APPS_SCRIPT_URL y el despliegue del Apps Script.");
       COUNTS = {};
     }
 
