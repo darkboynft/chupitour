@@ -68,6 +68,7 @@
     els.ccaaSelect = document.getElementById("ccaa-select");
     els.statCount = document.getElementById("stat-count");
     els.statOf = document.getElementById("stat-of");
+    els.statTotalChupitos = document.getElementById("stat-total-chupitos");
     els.progressFill = document.getElementById("progress-fill");
     els.lockBtn = document.getElementById("lock-btn");
     els.modalOverlay = document.getElementById("modal-overlay");
@@ -165,15 +166,18 @@
   async function submitNewPlace(){
     const pais = els.newPlacePais.value.trim();
     const region = els.newPlaceRegion.value.trim();
-    const nombre = els.newPlaceNombre.value.trim();
+    let nombre = els.newPlaceNombre.value.trim();
     const cantidad = Math.max(0, parseInt(els.newPlaceCantidad.value, 10) || 0);
     const lat = els.newPlaceLat.value.trim();
     const lon = els.newPlaceLon.value.trim();
 
-    if (!pais || !nombre){
-      els.addPlaceError.textContent = "Falta el país o el nombre del lugar.";
+    if (!pais){
+      els.addPlaceError.textContent = "Falta el país.";
       els.addPlaceError.style.display = "block";
       return;
+    }
+    if (!nombre){
+      nombre = `${pais} (sin concretar)`;
     }
 
     els.addPlaceConfirm.textContent = "Guardando…";
@@ -332,7 +336,35 @@
   const ALIASES = {
     "orense": "ourense",
     "zahara de la sierra": "zahara",
-    "valenca do minho": "valenca"
+    "valenca do minho": "valenca",
+    // Exónimos españoles de ciudades extranjeras -> nombre oficial en los datos
+    "londres": "london",
+    "edimburgo": "edinburgh",
+    "florencia": "firenze",
+    "milan": "milano",
+    "napoles": "napoli",
+    "venecia": "venezia",
+    "turin": "torino",
+    "padua": "padova",
+    "bolonia": "bologna",
+    "cerdena": "sardegna",
+    "sicilia": "sicilia",
+    "ginebra": "geneve",
+    "basilea": "basel",
+    "berna": "bern",
+    "lucerna": "luzern",
+    "la haya": "den haag",
+    "amberes": "antwerpen",
+    "brujas": "brugge",
+    "varsovia": "warszawa",
+    "cracovia": "krakow",
+    "praga": "praha",
+    "viena": "wien",
+    "munich": "munchen",
+    "colonia": "koln",
+    "hamburgo": "hamburg",
+    "brunswick": "braunschweig",
+    "oporto": "porto"
   };
 
   function allMunicipios(){
@@ -368,11 +400,22 @@
     return true;
   }
 
+  function totalChupitosOficiales(){
+    const ids = new Set(officialMunicipios().map(m => m.id));
+    let total = 0;
+    Object.entries(COUNTS).forEach(([id, v]) => {
+      if (ids.has(id)) total += (Number(v) || 0);
+    });
+    return total;
+  }
+
   function updateHeaderStats(){
     const total = totalMunicipios();
     const conseguidos = totalConseguidos();
+    const totalChupitos = totalChupitosOficiales();
     els.statCount.textContent = conseguidos.toLocaleString("es-ES");
-    els.statOf.textContent = `de ${total.toLocaleString("es-ES")} municipios`;
+    els.statOf.textContent = `municipios de ${total.toLocaleString("es-ES")}`;
+    els.statTotalChupitos.textContent = totalChupitos.toLocaleString("es-ES");
     requestAnimationFrame(() => {
       const pct = total ? (conseguidos / total) * 100 : 0;
       els.progressFill.style.width = pct.toFixed(2) + "%";
