@@ -111,9 +111,19 @@ h1{
 .hero-stats{ flex: 1 1 200px; }
 .stat-row{
   display:flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 22px;
   flex-wrap: wrap;
+}
+.stat-block{
+  display:flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.stat-divider{
+  width: 1px;
+  height: 30px;
+  background: var(--line);
 }
 .stat-count{
   font-family: var(--display);
@@ -122,6 +132,7 @@ h1{
   color: var(--coral);
   line-height: 1;
 }
+.stat-count-secondary{ color: var(--teal); }
 .stat-of{
   font-size: 0.95rem;
   color: var(--ink-soft);
