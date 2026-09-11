@@ -367,9 +367,11 @@
     "oporto": "porto"
   };
 
-  function allMunicipios(){
+  function allMunicipios(withContext){
     const out = [];
-    GEO.comunidades.forEach(c => c.provincias.forEach(p => p.municipios.forEach(m => out.push(m))));
+    GEO.comunidades.forEach(c => c.provincias.forEach(p => p.municipios.forEach(m => {
+      out.push(withContext ? Object.assign({ _ctx: [c.nombre, p.nombre] }, m) : m);
+    })));
     return out;
   }
 
@@ -385,17 +387,21 @@
     return Object.entries(COUNTS).filter(([id, v]) => ids.has(id) && Number(v) > 0).length;
   }
 
-  function matchesFilters(m){
+  function textMatchesQuery(text, q){
+    const nombre = normalize(text);
+    const aliasTarget = ALIASES[q];
+    return nombre.includes(q) || (aliasTarget && nombre.includes(aliasTarget));
+  }
+
+  function matchesFilters(m, contextNames){
     const cantidad = Number(COUNTS[m.id]) || 0;
     if (state.filter === "conseguidos" && cantidad <= 0) return false;
     if (state.filter === "pendientes" && cantidad > 0) return false;
     if (state.query){
       const q = normalize(state.query);
-      const nombre = normalize(m.nombre);
-      const aliasTarget = ALIASES[q];
-      const matchesDirect = nombre.includes(q);
-      const matchesAlias = aliasTarget && nombre.includes(aliasTarget);
-      if (!matchesDirect && !matchesAlias) return false;
+      const names = contextNames ? contextNames.concat([m.nombre]) : [m.nombre];
+      const anyMatch = names.some(n => textMatchesQuery(n, q));
+      if (!anyMatch) return false;
     }
     return true;
   }
@@ -434,7 +440,7 @@
 
     comunidades.forEach((ccaa, idx) => {
       const provinciasFiltradas = ccaa.provincias
-        .map(p => ({ nombre: p.nombre, municipios: p.municipios.filter(matchesFilters) }))
+        .map(p => ({ nombre: p.nombre, municipios: p.municipios.filter(m => matchesFilters(m, [ccaa.nombre, p.nombre])) }))
         .filter(p => p.municipios.length > 0);
 
       if (provinciasFiltradas.length === 0) return;
@@ -553,7 +559,7 @@
     filledLayer.clearLayers();
     pendingLayer.clearLayers();
 
-    const municipios = allMunicipios().filter(m => matchesFilters(m) && m.lat != null && m.lon != null);
+    const municipios = allMunicipios(true).filter(m => matchesFilters(m, m._ctx) && m.lat != null && m.lon != null);
 
     municipios.forEach(m => {
       const cantidad = Number(COUNTS[m.id]) || 0;
