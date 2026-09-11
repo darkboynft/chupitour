@@ -47,8 +47,15 @@
       </svg>
       <div class="hero-stats">
         <div class="stat-row">
-          <span id="stat-count" class="stat-count">0</span>
-          <span id="stat-of" class="stat-of">de 0 municipios</span>
+          <div class="stat-block">
+            <span id="stat-count" class="stat-count">0</span>
+            <span id="stat-of" class="stat-of">municipios de 0</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-block">
+            <span id="stat-total-chupitos" class="stat-count stat-count-secondary">0</span>
+            <span class="stat-of">chupitos en total</span>
+          </div>
         </div>
         <div class="progress-track">
           <div id="progress-fill" class="progress-fill"></div>
@@ -115,8 +122,8 @@
     <label class="form-label">Región / estado (opcional)</label>
     <input id="new-place-region" type="text" placeholder="p. ej. Baden-Wurtemberg">
 
-    <label class="form-label">Lugar *</label>
-    <input id="new-place-nombre" type="text" placeholder="p. ej. Stuttgart">
+    <label class="form-label">Lugar (opcional — vacío = "sin concretar")</label>
+    <input id="new-place-nombre" type="text" placeholder="p. ej. Stuttgart, o déjalo vacío">
 
     <label class="form-label">Cantidad</label>
     <input id="new-place-cantidad" type="number" min="0" value="1">
