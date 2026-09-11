@@ -169,6 +169,47 @@ h1{
   box-shadow: 0 1px 4px rgba(36,27,47,0.1);
 }
 
+.add-place-btn{
+  display: inline-flex;
+  margin: 0 0 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--lav);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 8px 4px;
+}
+.add-place-btn:hover{ text-decoration: underline; }
+
+.modal-wide{ max-width: 420px; text-align: left; }
+.form-label{
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 12px 0 4px;
+}
+.modal input[type="text"], .modal input[type="number"]{
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+}
+.latlon-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.hint-text{
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  margin: 10px 0 4px;
+}
+
 /* ---------- Controls ---------- */
 .controls{
   display:flex;

@@ -3,6 +3,7 @@
 
   let GEO = null;
   let COUNTS = {};
+  let CUSTOM_LUGARES = [];
   let unlocked = false;
   let currentView = "list";
   let leafletMap = null;
@@ -31,16 +32,32 @@
     }
 
     try{
-      COUNTS = await fetchCounts();
+      const remote = await fetchRemoteData();
+      COUNTS = remote.counts;
+      CUSTOM_LUGARES = remote.lugares;
     }catch(err){
       console.error("Error cargando datos de Google Sheets:", err);
       toast("No se pudieron cargar las cantidades desde Google Sheets. Revisa APPS_SCRIPT_URL y el despliegue del Apps Script.");
       COUNTS = {};
+      CUSTOM_LUGARES = [];
     }
 
+    mergeCustomLugares();
     populateCcaaSelect();
     renderList();
     updateHeaderStats();
+
+    // Carga en segundo plano los grupos internacionales / especiales, sin bloquear el primer render.
+    fetch("data/internacional.json")
+      .then(r => r.ok ? r.json() : null)
+      .then(extra => {
+        if (!extra || !extra.comunidades) return;
+        GEO.comunidades = GEO.comunidades.concat(extra.comunidades);
+        populateCcaaSelect();
+        renderList();
+        if (mapInitialized) refreshMapMarkers();
+      })
+      .catch(err => console.warn("No se pudo cargar data/internacional.json:", err));
   }
 
   function cacheEls(){
@@ -61,6 +78,18 @@
     els.btnViewList = document.getElementById("btn-view-list");
     els.btnViewMap = document.getElementById("btn-view-map");
     els.showPendingMap = document.getElementById("show-pending-map");
+    els.addPlaceBtn = document.getElementById("add-place-btn");
+    els.addPlaceOverlay = document.getElementById("add-place-overlay");
+    els.addPlaceCancel = document.getElementById("add-place-cancel");
+    els.addPlaceConfirm = document.getElementById("add-place-confirm");
+    els.addPlaceError = document.getElementById("add-place-error");
+    els.newPlacePais = document.getElementById("new-place-pais");
+    els.newPlaceRegion = document.getElementById("new-place-region");
+    els.newPlaceNombre = document.getElementById("new-place-nombre");
+    els.newPlaceCantidad = document.getElementById("new-place-cantidad");
+    els.newPlaceLat = document.getElementById("new-place-lat");
+    els.newPlaceLon = document.getElementById("new-place-lon");
+    els.paisesDatalist = document.getElementById("paises-existentes");
   }
 
   function bindGlobalControls(){
@@ -91,6 +120,7 @@
         unlocked = false;
         els.lockBtn.classList.remove("unlocked");
         els.lockBtn.textContent = "🔒 Panel";
+        els.addPlaceBtn.hidden = true;
         renderList();
       } else {
         openModal();
@@ -104,6 +134,84 @@
     els.btnViewList.addEventListener("click", () => switchView("list"));
     els.btnViewMap.addEventListener("click", () => switchView("map"));
     els.showPendingMap.addEventListener("change", refreshMapMarkers);
+
+    els.addPlaceBtn.addEventListener("click", openAddPlaceModal);
+    els.addPlaceCancel.addEventListener("click", closeAddPlaceModal);
+    els.addPlaceConfirm.addEventListener("click", submitNewPlace);
+  }
+
+  function openAddPlaceModal(){
+    els.addPlaceError.style.display = "none";
+    els.newPlacePais.value = "";
+    els.newPlaceRegion.value = "";
+    els.newPlaceNombre.value = "";
+    els.newPlaceCantidad.value = "1";
+    els.newPlaceLat.value = "";
+    els.newPlaceLon.value = "";
+    // Rellena el datalist con los países/grupos ya existentes, para autocompletar.
+    els.paisesDatalist.innerHTML = "";
+    const nombresUnicos = new Set(GEO.comunidades.map(c => c.nombre.replace(/ — Mis lugares$/, "").replace(/ — .*$/, "")));
+    nombresUnicos.forEach(n => {
+      const opt = document.createElement("option");
+      opt.value = n;
+      els.paisesDatalist.appendChild(opt);
+    });
+    els.addPlaceOverlay.hidden = false;
+    els.newPlacePais.focus();
+  }
+
+  function closeAddPlaceModal(){ els.addPlaceOverlay.hidden = true; }
+
+  async function submitNewPlace(){
+    const pais = els.newPlacePais.value.trim();
+    const region = els.newPlaceRegion.value.trim();
+    const nombre = els.newPlaceNombre.value.trim();
+    const cantidad = Math.max(0, parseInt(els.newPlaceCantidad.value, 10) || 0);
+    const lat = els.newPlaceLat.value.trim();
+    const lon = els.newPlaceLon.value.trim();
+
+    if (!pais || !nombre){
+      els.addPlaceError.textContent = "Falta el país o el nombre del lugar.";
+      els.addPlaceError.style.display = "block";
+      return;
+    }
+
+    els.addPlaceConfirm.textContent = "Guardando…";
+    try{
+      const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          accion: "anadir_lugar",
+          pais, region, nombre, cantidad,
+          lat: lat === "" ? "" : Number(lat),
+          lon: lon === "" ? "" : Number(lon),
+          clave: window.__CLAVE_PANEL || ""
+        })
+      });
+      const data = await res.json();
+      if (!data.ok){
+        els.addPlaceError.textContent = data.error || "No se pudo guardar.";
+        els.addPlaceError.style.display = "block";
+        els.addPlaceConfirm.textContent = "Guardar lugar";
+        return;
+      }
+      closeAddPlaceModal();
+      toast(`Añadido: ${nombre}`);
+      // Recarga cantidades + lugares personalizados y vuelve a fusionar/pintar.
+      const remote = await fetchRemoteData();
+      COUNTS = remote.counts;
+      CUSTOM_LUGARES = remote.lugares;
+      mergeCustomLugares();
+      populateCcaaSelect();
+      renderList();
+      if (mapInitialized) refreshMapMarkers();
+    }catch(err){
+      console.error(err);
+      els.addPlaceError.textContent = "Error de red al guardar.";
+      els.addPlaceError.style.display = "block";
+    }
+    els.addPlaceConfirm.textContent = "Guardar lugar";
   }
 
   function switchView(view){
@@ -132,15 +240,54 @@
     unlocked = true;
     els.lockBtn.classList.add("unlocked");
     els.lockBtn.textContent = "🔓 Panel activo";
+    els.addPlaceBtn.hidden = false;
     closeModal();
     renderList();
   }
 
-  async function fetchCounts(){
-    if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes("TU_ID_DE_DESPLIEGUE")) return {};
+  async function fetchRemoteData(){
+    if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes("TU_ID_DE_DESPLIEGUE")){
+      return { counts: {}, lugares: [] };
+    }
     const res = await fetch(CONFIG.APPS_SCRIPT_URL);
     if (!res.ok) throw new Error("Error al leer datos de Google Sheets");
-    return res.json();
+    const data = await res.json();
+    // Compatibilidad con la versión antigua del Apps Script (devolvía { id: cantidad } directamente).
+    if (data && data.counts){
+      return { counts: data.counts, lugares: data.lugares || [] };
+    }
+    return { counts: data || {}, lugares: [] };
+  }
+
+  function mergeCustomLugares(){
+    // Elimina cualquier grupo "custom" añadido en una fusión anterior, para no duplicar.
+    GEO.comunidades = GEO.comunidades.filter(c => !c.custom);
+    if (!CUSTOM_LUGARES || CUSTOM_LUGARES.length === 0) return;
+    const porPais = {};
+    CUSTOM_LUGARES.forEach(l => {
+      const pais = l.pais || "Otros";
+      const region = l.region || "General";
+      if (!porPais[pais]) porPais[pais] = {};
+      if (!porPais[pais][region]) porPais[pais][region] = [];
+      porPais[pais][region].push({
+        id: l.id, nombre: l.nombre,
+        lat: l.lat != null ? Number(l.lat) : null,
+        lon: l.lon != null ? Number(l.lon) : null
+      });
+    });
+
+    Object.keys(porPais).forEach(pais => {
+      const provincias = Object.keys(porPais[pais]).sort().map(region => ({
+        nombre: region,
+        municipios: porPais[pais][region].sort((a,b) => a.nombre.localeCompare(b.nombre))
+      }));
+      GEO.comunidades.push({
+        nombre: `${pais} — Mis lugares`,
+        extra: true,
+        custom: true,
+        provincias
+      });
+    });
   }
 
   async function saveCount(id, cantidad){
@@ -169,7 +316,9 @@
 
   function populateCcaaSelect(){
     if (!GEO || !GEO.comunidades) return;
+    const existing = new Set(Array.from(els.ccaaSelect.options).map(o => o.value));
     GEO.comunidades.forEach(c => {
+      if (existing.has(c.nombre)) return;
       const opt = document.createElement("option");
       opt.value = c.nombre;
       opt.textContent = c.nombre;
@@ -177,20 +326,45 @@
     });
   }
 
+  function normalize(s){
+    return s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+  const ALIASES = {
+    "orense": "ourense",
+    "zahara de la sierra": "zahara",
+    "valenca do minho": "valenca"
+  };
+
   function allMunicipios(){
     const out = [];
     GEO.comunidades.forEach(c => c.provincias.forEach(p => p.municipios.forEach(m => out.push(m))));
     return out;
   }
 
-  function totalMunicipios(){ return allMunicipios().length; }
-  function totalConseguidos(){ return Object.values(COUNTS).filter(v => Number(v) > 0).length; }
+  function officialMunicipios(){
+    const out = [];
+    GEO.comunidades.filter(c => !c.extra).forEach(c => c.provincias.forEach(p => p.municipios.forEach(m => out.push(m))));
+    return out;
+  }
+
+  function totalMunicipios(){ return officialMunicipios().length; }
+  function totalConseguidos(){
+    const ids = new Set(officialMunicipios().map(m => m.id));
+    return Object.entries(COUNTS).filter(([id, v]) => ids.has(id) && Number(v) > 0).length;
+  }
 
   function matchesFilters(m){
     const cantidad = Number(COUNTS[m.id]) || 0;
     if (state.filter === "conseguidos" && cantidad <= 0) return false;
     if (state.filter === "pendientes" && cantidad > 0) return false;
-    if (state.query && !m.nombre.toLowerCase().includes(state.query)) return false;
+    if (state.query){
+      const q = normalize(state.query);
+      const nombre = normalize(m.nombre);
+      const aliasTarget = ALIASES[q];
+      const matchesDirect = nombre.includes(q);
+      const matchesAlias = aliasTarget && nombre.includes(aliasTarget);
+      if (!matchesDirect && !matchesAlias) return false;
+    }
     return true;
   }
 

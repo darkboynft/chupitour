@@ -60,6 +60,7 @@
       <button id="btn-view-list" type="button" aria-pressed="true">📋 Lista</button>
       <button id="btn-view-map" type="button" aria-pressed="false">🗺️ Mapa</button>
     </div>
+    <button id="add-place-btn" class="add-place-btn" type="button" hidden>➕ Añadir lugar nuevo</button>
   </header>
 
   <section class="controls">
@@ -69,8 +70,8 @@
       <button class="chip" type="button" data-filter="conseguidos" aria-pressed="false">Conseguidos</button>
       <button class="chip" type="button" data-filter="pendientes" aria-pressed="false">Pendientes</button>
     </div>
-    <select id="ccaa-select" class="ccaa-select" aria-label="Filtrar por comunidad autónoma">
-      <option value="todas">Todas las comunidades</option>
+    <select id="ccaa-select" class="ccaa-select" aria-label="Filtrar por comunidad, lugar especial o país">
+      <option value="todas">Todo</option>
     </select>
   </section>
 
@@ -102,6 +103,42 @@
 </div>
 
 <div id="status-toast" class="status-toast"></div>
+
+<div id="add-place-overlay" class="modal-overlay" hidden>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="add-place-title">
+    <h2 id="add-place-title">Añadir lugar nuevo</h2>
+    <p>Para países o lugares que aún no están en la lista (por ejemplo, un país entero, una región sin concretar municipio, o un monumento). Se guarda directamente en tu Google Sheet.</p>
+    <label class="form-label">País *</label>
+    <input id="new-place-pais" type="text" placeholder="p. ej. Alemania" list="paises-existentes">
+    <datalist id="paises-existentes"></datalist>
+
+    <label class="form-label">Región / estado (opcional)</label>
+    <input id="new-place-region" type="text" placeholder="p. ej. Baden-Wurtemberg">
+
+    <label class="form-label">Lugar *</label>
+    <input id="new-place-nombre" type="text" placeholder="p. ej. Stuttgart">
+
+    <label class="form-label">Cantidad</label>
+    <input id="new-place-cantidad" type="number" min="0" value="1">
+
+    <div class="latlon-row">
+      <div>
+        <label class="form-label">Latitud (opcional)</label>
+        <input id="new-place-lat" type="number" step="any" placeholder="para verlo en el mapa">
+      </div>
+      <div>
+        <label class="form-label">Longitud (opcional)</label>
+        <input id="new-place-lon" type="number" step="any" placeholder="para verlo en el mapa">
+      </div>
+    </div>
+    <p class="hint-text">Truco para las coordenadas: busca el lugar en Google Maps, haz clic derecho sobre el punto exacto y pulsa sobre los números que aparecen arriba — se copian solos.</p>
+    <p id="add-place-error" class="modal-error">Falta el país o el nombre.</p>
+    <div class="modal-actions">
+      <button id="add-place-cancel" class="btn" type="button">Cancelar</button>
+      <button id="add-place-confirm" class="btn btn-primary" type="button">Guardar lugar</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="js/config.js"></script>
