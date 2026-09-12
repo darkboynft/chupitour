@@ -46,6 +46,7 @@
     populateCcaaSelect();
     renderList();
     updateHeaderStats();
+    restaurarPaisesConDatos();
 
     // Carga en segundo plano los grupos internacionales / especiales, sin bloquear el primer render.
     fetch("data/internacional.json")
@@ -298,6 +299,47 @@
       return { counts: data.counts, lugares: data.lugares || [] };
     }
     return { counts: data || {}, lugares: [] };
+  }
+
+  // Países que se guardaron como catálogo completo en su momento. Si el usuario ya tiene
+  // cantidades guardadas ahí (de cuando sí estaban cargados), se recuperan solos sin tener
+  // que cargar el resto de países de golpe.
+  const PAISES_CATALOGO = {
+    "alemania": "data/paises/alemania.json",
+    "ecuador": "data/paises/ecuador.json",
+    "francia": "data/paises/francia.json",
+    "holanda": "data/paises/holanda.json",
+    "italia": "data/paises/italia.json",
+    "mexico": "data/paises/mexico.json",
+    "monaco": "data/paises/monaco.json",
+    "peru": "data/paises/peru.json",
+    "polonia": "data/paises/polonia.json",
+    "reinounido": "data/paises/reinounido.json",
+    "san-marino": "data/paises/sanmarino.json",
+    "suiza": "data/paises/suiza.json"
+  };
+
+  function restaurarPaisesConDatos(){
+    const prefijos = new Set();
+    Object.entries(COUNTS).forEach(([id, v]) => {
+      if (Number(v) > 0){
+        const prefijo = id.split("__")[0];
+        if (PAISES_CATALOGO[prefijo]) prefijos.add(prefijo);
+      }
+    });
+    prefijos.forEach(prefijo => {
+      fetch(PAISES_CATALOGO[prefijo])
+        .then(r => r.ok ? r.json() : null)
+        .then(extra => {
+          if (!extra || !extra.comunidades) return;
+          GEO.comunidades = GEO.comunidades.concat(extra.comunidades);
+          populateCcaaSelect();
+          renderList();
+          if (mapInitialized) refreshMapMarkers();
+          toast(`Recuperados tus lugares guardados de ${prefijo}.`);
+        })
+        .catch(err => console.warn(`No se pudo recuperar el catálogo de ${prefijo}:`, err));
+    });
   }
 
   function mergeCustomLugares(){
