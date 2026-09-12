@@ -91,6 +91,7 @@
     els.newPlaceLat = document.getElementById("new-place-lat");
     els.newPlaceLon = document.getElementById("new-place-lon");
     els.paisesDatalist = document.getElementById("paises-existentes");
+    els.geocodeStatus = document.getElementById("geocode-status");
   }
 
   function bindGlobalControls(){
@@ -143,10 +144,42 @@
     els.addPlaceBtn.addEventListener("click", openAddPlaceModal);
     els.addPlaceCancel.addEventListener("click", closeAddPlaceModal);
     els.addPlaceConfirm.addEventListener("click", submitNewPlace);
+    els.newPlaceNombre.addEventListener("blur", autocompletarLugar);
+  }
+
+  async function autocompletarLugar(){
+    const nombre = els.newPlaceNombre.value.trim();
+    if (!nombre) return;
+    els.geocodeStatus.textContent = "Buscando coordenadas…";
+    try{
+      const pistaPais = els.newPlacePais.value.trim();
+      const query = pistaPais ? `${nombre}, ${pistaPais}` : nombre;
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, { headers: { "Accept-Language": "es" } });
+      const data = await res.json();
+      if (!data || data.length === 0){
+        els.geocodeStatus.textContent = "No se ha encontrado ese lugar automáticamente. Puedes rellenar los datos a mano.";
+        return;
+      }
+      const r = data[0];
+      if (!els.newPlaceLat.value) els.newPlaceLat.value = Number(r.lat).toFixed(5);
+      if (!els.newPlaceLon.value) els.newPlaceLon.value = Number(r.lon).toFixed(5);
+      const addr = r.address || {};
+      if (!els.newPlacePais.value && addr.country) els.newPlacePais.value = addr.country;
+      if (!els.newPlaceRegion.value){
+        const region = addr.state || addr.region || addr.province || "";
+        if (region) els.newPlaceRegion.value = region;
+      }
+      els.geocodeStatus.textContent = `Encontrado: ${r.display_name.split(",").slice(0,3).join(",")}`;
+    }catch(err){
+      console.warn("Geocodificación falló:", err);
+      els.geocodeStatus.textContent = "No se pudo buscar automáticamente (sin conexión con el servicio). Puedes rellenar a mano.";
+    }
   }
 
   function openAddPlaceModal(){
     els.addPlaceError.style.display = "none";
+    els.geocodeStatus.textContent = "";
     els.newPlacePais.value = "";
     els.newPlaceRegion.value = "";
     els.newPlaceNombre.value = "";
