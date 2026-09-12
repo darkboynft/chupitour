@@ -194,7 +194,12 @@ h1{
 }
 .add-place-btn:hover{ text-decoration: underline; }
 
-.modal-wide{ max-width: 420px; text-align: left; }
+.modal-wide{ max-width: 560px; text-align: left; max-height: 90vh; overflow-y: auto; }
+.form-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
 .form-label{
   display: block;
   font-size: 0.8rem;
@@ -214,6 +219,12 @@ h1{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+.field-status{
+  font-size: 0.76rem;
+  color: var(--teal);
+  min-height: 1.1em;
+  margin-top: 4px;
 }
 .hint-text{
   font-size: 0.76rem;
