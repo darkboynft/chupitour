@@ -94,10 +94,14 @@
   }
 
   function bindGlobalControls(){
+    let searchDebounce = null;
     els.search.addEventListener("input", () => {
-      state.query = els.search.value.trim().toLowerCase();
-      renderList();
-      if (currentView === "map") refreshMapMarkers();
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        state.query = els.search.value.trim().toLowerCase();
+        renderList();
+        if (currentView === "map") refreshMapMarkers();
+      }, 180);
     });
 
     els.chips.forEach(chip => {
@@ -393,15 +397,21 @@
     return nombre.includes(q) || (aliasTarget && nombre.includes(aliasTarget));
   }
 
+  function muniMatchesQuery(m, q){
+    if (m._n === undefined) m._n = normalize(m.nombre);
+    const aliasTarget = ALIASES[q];
+    return m._n.includes(q) || (aliasTarget && m._n.includes(aliasTarget));
+  }
+
   function matchesFilters(m, contextNames){
     const cantidad = Number(COUNTS[m.id]) || 0;
     if (state.filter === "conseguidos" && cantidad <= 0) return false;
     if (state.filter === "pendientes" && cantidad > 0) return false;
     if (state.query){
       const q = normalize(state.query);
-      const names = contextNames ? contextNames.concat([m.nombre]) : [m.nombre];
-      const anyMatch = names.some(n => textMatchesQuery(n, q));
-      if (!anyMatch) return false;
+      const ownMatch = muniMatchesQuery(m, q);
+      const contextMatch = contextNames && contextNames.some(n => textMatchesQuery(n, q));
+      if (!ownMatch && !contextMatch) return false;
     }
     return true;
   }
@@ -428,6 +438,23 @@
     });
   }
 
+  function buildMuniGrids(body, provincias){
+    provincias.forEach(p => {
+      const provBlock = document.createElement("div");
+      provBlock.className = "prov-block";
+      const provTitle = document.createElement("p");
+      provTitle.className = "prov-title";
+      provTitle.textContent = p.nombre;
+      provBlock.appendChild(provTitle);
+
+      const grid = document.createElement("div");
+      grid.className = "muni-grid";
+      p.municipios.forEach(m => grid.appendChild(renderMuniChip(m)));
+      provBlock.appendChild(grid);
+      body.appendChild(provBlock);
+    });
+  }
+
   function renderList(){
     if (!GEO) return;
     updateHeaderStats();
@@ -436,54 +463,55 @@
     let comunidades = GEO.comunidades;
     if (state.ccaa !== "todas") comunidades = comunidades.filter(c => c.nombre === state.ccaa);
 
+    const isActiveSearch = !!(state.query || state.filter !== "todos" || state.ccaa !== "todas");
     let anyRendered = false;
 
     comunidades.forEach((ccaa, idx) => {
-      const provinciasFiltradas = ccaa.provincias
-        .map(p => ({ nombre: p.nombre, municipios: p.municipios.filter(m => matchesFilters(m, [ccaa.nombre, p.nombre])) }))
-        .filter(p => p.municipios.length > 0);
-
-      if (provinciasFiltradas.length === 0) return;
-      anyRendered = true;
-
-      const ccaaConseguidos = ccaa.provincias.reduce((acc, p) =>
-        acc + p.municipios.filter(m => Number(COUNTS[m.id]) > 0).length, 0);
-      const ccaaTotal = ccaa.provincias.reduce((acc, p) => acc + p.municipios.length, 0);
-
       const block = document.createElement("div");
       block.className = "ccaa-block";
       block.style.animationDelay = Math.min(idx * 35, 350) + "ms";
 
-      const isActiveSearch = !!(state.query || state.filter !== "todos" || state.ccaa !== "todas");
-      if (isActiveSearch) block.classList.add("open");
-
       const header = document.createElement("button");
       header.className = "ccaa-header";
-      header.innerHTML = `
-        <h2>${ccaa.nombre}</h2>
-        <span class="ccaa-meta">
-          <span>${ccaaConseguidos} / ${ccaaTotal}</span>
-          <span class="ccaa-caret">›</span>
-        </span>`;
-      header.addEventListener("click", () => block.classList.toggle("open"));
-
       const body = document.createElement("div");
       body.className = "ccaa-body";
 
-      provinciasFiltradas.forEach(p => {
-        const provBlock = document.createElement("div");
-        provBlock.className = "prov-block";
-        const provTitle = document.createElement("p");
-        provTitle.className = "prov-title";
-        provTitle.textContent = p.nombre;
-        provBlock.appendChild(provTitle);
+      if (isActiveSearch){
+        // Modo búsqueda/filtro: hace falta saber exactamente qué queda, así que se calcula y pinta ya.
+        const provinciasFiltradas = ccaa.provincias
+          .map(p => ({ nombre: p.nombre, municipios: p.municipios.filter(m => matchesFilters(m, [ccaa.nombre, p.nombre])) }))
+          .filter(p => p.municipios.length > 0);
 
-        const grid = document.createElement("div");
-        grid.className = "muni-grid";
-        p.municipios.forEach(m => grid.appendChild(renderMuniChip(m)));
-        provBlock.appendChild(grid);
-        body.appendChild(provBlock);
-      });
+        if (provinciasFiltradas.length === 0) return;
+        anyRendered = true;
+        block.classList.add("open");
+
+        const ccaaConseguidos = ccaa.provincias.reduce((acc, p) =>
+          acc + p.municipios.filter(m => Number(COUNTS[m.id]) > 0).length, 0);
+        const ccaaTotal = ccaa.provincias.reduce((acc, p) => acc + p.municipios.length, 0);
+        header.innerHTML = `<h2>${ccaa.nombre}</h2><span class="ccaa-meta"><span>${ccaaConseguidos} / ${ccaaTotal}</span><span class="ccaa-caret">›</span></span>`;
+        header.addEventListener("click", () => block.classList.toggle("open"));
+
+        buildMuniGrids(body, provinciasFiltradas);
+      } else {
+        // Modo "explorar todo": solo se cuenta (barato); el contenido de cada país se
+        // construye la primera vez que se abre, para no crear ~60.000 elementos de golpe.
+        anyRendered = true;
+
+        const ccaaConseguidos = ccaa.provincias.reduce((acc, p) =>
+          acc + p.municipios.filter(m => Number(COUNTS[m.id]) > 0).length, 0);
+        const ccaaTotal = ccaa.provincias.reduce((acc, p) => acc + p.municipios.length, 0);
+        header.innerHTML = `<h2>${ccaa.nombre}</h2><span class="ccaa-meta"><span>${ccaaConseguidos} / ${ccaaTotal}</span><span class="ccaa-caret">›</span></span>`;
+
+        let built = false;
+        header.addEventListener("click", () => {
+          if (!built){
+            buildMuniGrids(body, ccaa.provincias);
+            built = true;
+          }
+          block.classList.toggle("open");
+        });
+      }
 
       block.appendChild(header);
       block.appendChild(body);
