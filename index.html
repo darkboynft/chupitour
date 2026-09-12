@@ -114,31 +114,43 @@
 <div id="add-place-overlay" class="modal-overlay" hidden>
   <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="add-place-title">
     <h2 id="add-place-title">Añadir lugar nuevo</h2>
-    <p>Para países o lugares que aún no están en la lista (por ejemplo, un país entero, una región sin concretar municipio, o un monumento). Se guarda directamente en tu Google Sheet.</p>
-    <label class="form-label">País *</label>
-    <input id="new-place-pais" type="text" placeholder="p. ej. Alemania" list="paises-existentes">
-    <datalist id="paises-existentes"></datalist>
+    <p>Para países o lugares que aún no están en la lista. Se guarda directamente en tu Google Sheet.</p>
 
-    <label class="form-label">Región / estado (opcional)</label>
-    <input id="new-place-region" type="text" placeholder="p. ej. Baden-Wurtemberg">
+    <div class="form-row">
+      <div>
+        <label class="form-label">País *</label>
+        <input id="new-place-pais" type="text" placeholder="p. ej. Alemania" list="paises-existentes">
+        <datalist id="paises-existentes"></datalist>
+      </div>
+      <div>
+        <label class="form-label">Región / estado (opcional)</label>
+        <input id="new-place-region" type="text" placeholder="p. ej. Baviera">
+      </div>
+    </div>
 
-    <label class="form-label">Lugar (opcional — vacío = "sin concretar")</label>
-    <input id="new-place-nombre" type="text" placeholder="p. ej. Stuttgart, o déjalo vacío">
-
-    <label class="form-label">Cantidad</label>
-    <input id="new-place-cantidad" type="number" min="0" value="1">
+    <div class="form-row">
+      <div>
+        <label class="form-label">Lugar (opcional — vacío = "sin concretar")</label>
+        <input id="new-place-nombre" type="text" placeholder="p. ej. Múnich">
+      </div>
+      <div>
+        <label class="form-label">Cantidad</label>
+        <input id="new-place-cantidad" type="number" min="0" value="1">
+      </div>
+    </div>
+    <p id="geocode-status" class="field-status"></p>
 
     <div class="latlon-row">
       <div>
         <label class="form-label">Latitud (opcional)</label>
-        <input id="new-place-lat" type="number" step="any" placeholder="para verlo en el mapa">
+        <input id="new-place-lat" type="number" step="any" placeholder="se rellena sola">
       </div>
       <div>
         <label class="form-label">Longitud (opcional)</label>
-        <input id="new-place-lon" type="number" step="any" placeholder="para verlo en el mapa">
+        <input id="new-place-lon" type="number" step="any" placeholder="se rellena sola">
       </div>
     </div>
-    <p class="hint-text">Truco para las coordenadas: busca el lugar en Google Maps, haz clic derecho sobre el punto exacto y pulsa sobre los números que aparecen arriba — se copian solos.</p>
+    <p class="hint-text">Al escribir el lugar y salir del campo, se buscan las coordenadas automáticamente (y el país/región si están vacíos). Si no encuentra nada o quieres afinar el punto, puedes escribirlas a mano: en Google Maps, clic derecho sobre el punto → clic en los números que aparecen.</p>
     <p id="add-place-error" class="modal-error">Falta el país o el nombre.</p>
     <div class="modal-actions">
       <button id="add-place-cancel" class="btn" type="button">Cancelar</button>
