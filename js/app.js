@@ -27,7 +27,7 @@
       });
     }catch(err){
       console.error("Error cargando municipios.json:", err);
-      toast("No se pudo cargar data/municipios.json. Revisa que el archivo esté en el repo.");
+      toast("No se pudo cargar data/municipios.json. Revisa que el archivo estÃ© en el repo.");
       GEO = { comunidades: [] };
     }
 
@@ -127,7 +127,7 @@
       if (unlocked){
         unlocked = false;
         els.lockBtn.classList.remove("unlocked");
-        els.lockBtn.textContent = "🔒 Panel";
+        els.lockBtn.textContent = "ðŸ”’ Panel";
         els.addPlaceBtn.hidden = true;
         renderList();
       } else {
@@ -153,7 +153,7 @@
   async function autocompletarLugar(){
     const nombre = els.newPlaceNombre.value.trim();
     if (!nombre) return;
-    els.geocodeStatus.textContent = "Buscando coordenadas…";
+    els.geocodeStatus.textContent = "Buscando coordenadasâ€¦";
     try{
       const pistaPais = els.newPlacePais.value.trim();
       const query = pistaPais ? `${nombre}, ${pistaPais}` : nombre;
@@ -161,7 +161,7 @@
       const res = await fetch(url, { headers: { "Accept-Language": "es" } });
       const data = await res.json();
       if (!data || data.length === 0){
-        els.geocodeStatus.textContent = "No se ha encontrado ese lugar automáticamente. Puedes rellenar los datos a mano.";
+        els.geocodeStatus.textContent = "No se ha encontrado ese lugar automÃ¡ticamente. Puedes rellenar los datos a mano.";
         return;
       }
       const r = data[0];
@@ -175,8 +175,8 @@
       }
       els.geocodeStatus.textContent = `Encontrado: ${r.display_name.split(",").slice(0,3).join(",")}`;
     }catch(err){
-      console.warn("Geocodificación falló:", err);
-      els.geocodeStatus.textContent = "No se pudo buscar automáticamente (sin conexión con el servicio). Puedes rellenar a mano.";
+      console.warn("GeocodificaciÃ³n fallÃ³:", err);
+      els.geocodeStatus.textContent = "No se pudo buscar automÃ¡ticamente (sin conexiÃ³n con el servicio). Puedes rellenar a mano.";
     }
   }
 
@@ -189,9 +189,9 @@
     els.newPlaceCantidad.value = "1";
     els.newPlaceLat.value = "";
     els.newPlaceLon.value = "";
-    // Rellena el datalist con los países/grupos ya existentes, para autocompletar.
+    // Rellena el datalist con los paÃ­ses/grupos ya existentes, para autocompletar.
     els.paisesDatalist.innerHTML = "";
-    const nombresUnicos = new Set(GEO.comunidades.map(c => c.nombre.replace(/ — Mis lugares$/, "").replace(/ — .*$/, "")));
+    const nombresUnicos = new Set(GEO.comunidades.map(c => c.nombre.replace(/ â€” Mis lugares$/, "").replace(/ â€” .*$/, "")));
     nombresUnicos.forEach(n => {
       const opt = document.createElement("option");
       opt.value = n;
@@ -212,7 +212,7 @@
     const lon = els.newPlaceLon.value.trim();
 
     if (!pais){
-      els.addPlaceError.textContent = "Falta el país.";
+      els.addPlaceError.textContent = "Falta el paÃ­s.";
       els.addPlaceError.style.display = "block";
       return;
     }
@@ -220,7 +220,7 @@
       nombre = `${pais} (sin concretar)`;
     }
 
-    els.addPlaceConfirm.textContent = "Guardando…";
+    els.addPlaceConfirm.textContent = "Guardandoâ€¦";
     try{
       const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
         method: "POST",
@@ -241,7 +241,7 @@
         return;
       }
       closeAddPlaceModal();
-      toast(`Añadido: ${nombre}`);
+      toast(`AÃ±adido: ${nombre}`);
       // Recarga cantidades + lugares personalizados y vuelve a fusionar/pintar.
       const remote = await fetchRemoteData();
       COUNTS = remote.counts;
@@ -283,7 +283,7 @@
     window.__CLAVE_PANEL = val;
     unlocked = true;
     els.lockBtn.classList.add("unlocked");
-    els.lockBtn.textContent = "🔓 Panel activo";
+    els.lockBtn.textContent = "ðŸ”“ Panel activo";
     els.addPlaceBtn.hidden = false;
     closeModal();
     renderList();
@@ -296,431 +296,19 @@
     const res = await fetch(CONFIG.APPS_SCRIPT_URL);
     if (!res.ok) throw new Error("Error al leer datos de Google Sheets");
     const data = await res.json();
-    // Compatibilidad con la versión antigua del Apps Script (devolvía { id: cantidad } directamente).
+    // Compatibilidad con la versiÃ³n antigua del Apps Script (devolvÃ­a { id: cantidad } directamente).
     if (data && data.counts){
       return { counts: data.counts, lugares: data.lugares || [] };
     }
     return { counts: data || {}, lugares: [] };
   }
 
-  // Países que se guardaron como catálogo completo en su momento. Si el usuario ya tiene
-  // cantidades guardadas ahí (de cuando sí estaban cargados), se recuperan solos sin tener
-  // que cargar el resto de países de golpe.
+  // PaÃ­ses que se guardaron como catÃ¡logo completo en su momento. Si el usuario ya tiene
+  // cantidades guardadas ahÃ­ (de cuando sÃ­ estaban cargados), se recuperan solos sin tener
+  // que cargar el resto de paÃ­ses de golpe.
   const PAISES_CATALOGO = {
     "alemania": "data/paises/alemania.json",
     "ecuador": "data/paises/ecuador.json",
     "francia": "data/paises/francia.json",
     "holanda": "data/paises/holanda.json",
-    "italia": "data/paises/italia.json",
-    "mexico": "data/paises/mexico.json",
-    "monaco": "data/paises/monaco.json",
-    "peru": "data/paises/peru.json",
-    "polonia": "data/paises/polonia.json",
-    "reinounido": "data/paises/reinounido.json",
-    "san-marino": "data/paises/sanmarino.json",
-    "suiza": "data/paises/suiza.json"
-  };
-
-  function restaurarPaisesConDatos(){
-    const prefijos = new Set();
-    Object.entries(COUNTS).forEach(([id, v]) => {
-      if (Number(v) > 0){
-        const prefijo = id.split("__")[0];
-        if (PAISES_CATALOGO[prefijo]) prefijos.add(prefijo);
-      }
-    });
-    prefijos.forEach(prefijo => {
-      fetch(PAISES_CATALOGO[prefijo])
-        .then(r => r.ok ? r.json() : null)
-        .then(extra => {
-          if (!extra || !extra.comunidades) return;
-          GEO.comunidades = GEO.comunidades.concat(extra.comunidades);
-          populateCcaaSelect();
-          renderList();
-          if (mapInitialized) refreshMapMarkers();
-          toast(`Recuperados tus lugares guardados de ${prefijo}.`);
-        })
-        .catch(err => console.warn(`No se pudo recuperar el catálogo de ${prefijo}:`, err));
-    });
-  }
-
-  function mergeCustomLugares(){
-    // Elimina cualquier grupo "custom" añadido en una fusión anterior, para no duplicar.
-    GEO.comunidades = GEO.comunidades.filter(c => !c.custom);
-    if (!CUSTOM_LUGARES || CUSTOM_LUGARES.length === 0) return;
-    const porPais = {};
-    CUSTOM_LUGARES.forEach(l => {
-      const pais = l.pais || "Otros";
-      const region = l.region || "General";
-      if (!porPais[pais]) porPais[pais] = {};
-      if (!porPais[pais][region]) porPais[pais][region] = [];
-      porPais[pais][region].push({
-        id: l.id, nombre: l.nombre,
-        lat: l.lat != null ? Number(l.lat) : null,
-        lon: l.lon != null ? Number(l.lon) : null
-      });
-    });
-
-    Object.keys(porPais).forEach(pais => {
-      const provincias = Object.keys(porPais[pais]).sort().map(region => ({
-        nombre: region,
-        municipios: porPais[pais][region].sort((a,b) => a.nombre.localeCompare(b.nombre))
-      }));
-      GEO.comunidades.push({
-        nombre: `${pais} — Mis lugares`,
-        extra: true,
-        custom: true,
-        provincias
-      });
-    });
-  }
-
-  async function saveCount(id, cantidad){
-    if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes("TU_ID_DE_DESPLIEGUE")){
-      toast("Configura APPS_SCRIPT_URL en js/config.js primero.");
-      return false;
-    }
-    try{
-      const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ id, cantidad, clave: window.__CLAVE_PANEL || "" })
-      });
-      const data = await res.json();
-      if (!data.ok){
-        toast(data.error || "No se pudo guardar (¿clave incorrecta?)");
-        return false;
-      }
-      return true;
-    }catch(err){
-      console.error(err);
-      toast("Error de red al guardar.");
-      return false;
-    }
-  }
-
-  function populateCcaaSelect(){
-    if (!GEO || !GEO.comunidades) return;
-    const existing = new Set(Array.from(els.ccaaSelect.options).map(o => o.value));
-    GEO.comunidades.forEach(c => {
-      if (existing.has(c.nombre)) return;
-      const opt = document.createElement("option");
-      opt.value = c.nombre;
-      opt.textContent = c.nombre;
-      els.ccaaSelect.appendChild(opt);
-    });
-  }
-
-  function normalize(s){
-    return s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  }
-  const ALIASES = {
-    "orense": "ourense",
-    "zahara de la sierra": "zahara",
-    "valenca do minho": "valenca",
-    // Exónimos españoles de ciudades extranjeras -> nombre oficial en los datos
-    "londres": "london",
-    "edimburgo": "edinburgh",
-    "florencia": "firenze",
-    "milan": "milano",
-    "napoles": "napoli",
-    "venecia": "venezia",
-    "turin": "torino",
-    "padua": "padova",
-    "bolonia": "bologna",
-    "cerdena": "sardegna",
-    "sicilia": "sicilia",
-    "ginebra": "geneve",
-    "basilea": "basel",
-    "berna": "bern",
-    "lucerna": "luzern",
-    "la haya": "den haag",
-    "amberes": "antwerpen",
-    "brujas": "brugge",
-    "varsovia": "warszawa",
-    "cracovia": "krakow",
-    "praga": "praha",
-    "viena": "wien",
-    "munich": "munchen",
-    "colonia": "koln",
-    "hamburgo": "hamburg",
-    "brunswick": "braunschweig",
-    "oporto": "porto"
-  };
-
-  function allMunicipios(withContext){
-    const out = [];
-    GEO.comunidades.forEach(c => c.provincias.forEach(p => p.municipios.forEach(m => {
-      out.push(withContext ? Object.assign({ _ctx: [c.nombre, p.nombre] }, m) : m);
-    })));
-    return out;
-  }
-
-  function officialMunicipios(){
-    const out = [];
-    GEO.comunidades.filter(c => !c.extra).forEach(c => c.provincias.forEach(p => p.municipios.forEach(m => out.push(m))));
-    return out;
-  }
-
-  function totalMunicipios(){ return officialMunicipios().length; }
-  function totalConseguidos(){
-    const ids = new Set(officialMunicipios().map(m => m.id));
-    return Object.entries(COUNTS).filter(([id, v]) => ids.has(id) && Number(v) > 0).length;
-  }
-
-  function textMatchesQuery(text, q){
-    const nombre = normalize(text);
-    const aliasTarget = ALIASES[q];
-    return nombre.includes(q) || (aliasTarget && nombre.includes(aliasTarget));
-  }
-
-  function muniMatchesQuery(m, q){
-    if (m._n === undefined) m._n = normalize(m.nombre);
-    const aliasTarget = ALIASES[q];
-    return m._n.includes(q) || (aliasTarget && m._n.includes(aliasTarget));
-  }
-
-  function matchesFilters(m, contextNames){
-    const cantidad = Number(COUNTS[m.id]) || 0;
-    if (state.filter === "conseguidos" && cantidad <= 0) return false;
-    if (state.filter === "pendientes" && cantidad > 0) return false;
-    if (state.query){
-      const q = normalize(state.query);
-      const ownMatch = muniMatchesQuery(m, q);
-      const contextMatch = contextNames && contextNames.some(n => textMatchesQuery(n, q));
-      if (!ownMatch && !contextMatch) return false;
-    }
-    return true;
-  }
-
-  function totalChupitosOficiales(){
-    const ids = new Set(officialMunicipios().map(m => m.id));
-    let total = 0;
-    Object.entries(COUNTS).forEach(([id, v]) => {
-      if (ids.has(id)) total += (Number(v) || 0);
-    });
-    return total;
-  }
-
-  function updateHeaderStats(){
-    const total = totalMunicipios();
-    const conseguidos = totalConseguidos();
-    const totalChupitos = totalChupitosOficiales();
-    els.statCount.textContent = conseguidos.toLocaleString("es-ES");
-    els.statOf.textContent = `municipios de ${total.toLocaleString("es-ES")}`;
-    els.statTotalChupitos.textContent = totalChupitos.toLocaleString("es-ES");
-    requestAnimationFrame(() => {
-      const pct = total ? (conseguidos / total) * 100 : 0;
-      els.progressFill.style.width = pct.toFixed(2) + "%";
-    });
-  }
-
-  function buildMuniGrids(body, provincias){
-    provincias.forEach(p => {
-      const provBlock = document.createElement("div");
-      provBlock.className = "prov-block";
-      const provTitle = document.createElement("p");
-      provTitle.className = "prov-title";
-      provTitle.textContent = p.nombre;
-      provBlock.appendChild(provTitle);
-
-      const grid = document.createElement("div");
-      grid.className = "muni-grid";
-      p.municipios.forEach(m => grid.appendChild(renderMuniChip(m)));
-      provBlock.appendChild(grid);
-      body.appendChild(provBlock);
-    });
-  }
-
-  function renderList(){
-    if (!GEO) return;
-    updateHeaderStats();
-
-    els.listView.innerHTML = "";
-    let comunidades = GEO.comunidades;
-    if (state.ccaa !== "todas") comunidades = comunidades.filter(c => c.nombre === state.ccaa);
-
-    const isActiveSearch = !!(state.query || state.filter !== "todos" || state.ccaa !== "todas");
-    let anyRendered = false;
-
-    comunidades.forEach((ccaa, idx) => {
-      const block = document.createElement("div");
-      block.className = "ccaa-block";
-      block.style.animationDelay = Math.min(idx * 35, 350) + "ms";
-
-      const header = document.createElement("button");
-      header.className = "ccaa-header";
-      const body = document.createElement("div");
-      body.className = "ccaa-body";
-
-      if (isActiveSearch){
-        // Modo búsqueda/filtro: hace falta saber exactamente qué queda, así que se calcula y pinta ya.
-        const provinciasFiltradas = ccaa.provincias
-          .map(p => ({ nombre: p.nombre, municipios: p.municipios.filter(m => matchesFilters(m, [ccaa.nombre, p.nombre])) }))
-          .filter(p => p.municipios.length > 0);
-
-        if (provinciasFiltradas.length === 0) return;
-        anyRendered = true;
-        block.classList.add("open");
-
-        const ccaaConseguidos = ccaa.provincias.reduce((acc, p) =>
-          acc + p.municipios.filter(m => Number(COUNTS[m.id]) > 0).length, 0);
-        const ccaaTotal = ccaa.provincias.reduce((acc, p) => acc + p.municipios.length, 0);
-        header.innerHTML = `<h2>${ccaa.nombre}</h2><span class="ccaa-meta"><span>${ccaaConseguidos} / ${ccaaTotal}</span><span class="ccaa-caret">›</span></span>`;
-        header.addEventListener("click", () => block.classList.toggle("open"));
-
-        buildMuniGrids(body, provinciasFiltradas);
-      } else {
-        // Modo "explorar todo": solo se cuenta (barato); el contenido de cada país se
-        // construye la primera vez que se abre, para no crear ~60.000 elementos de golpe.
-        anyRendered = true;
-
-        const ccaaConseguidos = ccaa.provincias.reduce((acc, p) =>
-          acc + p.municipios.filter(m => Number(COUNTS[m.id]) > 0).length, 0);
-        const ccaaTotal = ccaa.provincias.reduce((acc, p) => acc + p.municipios.length, 0);
-        header.innerHTML = `<h2>${ccaa.nombre}</h2><span class="ccaa-meta"><span>${ccaaConseguidos} / ${ccaaTotal}</span><span class="ccaa-caret">›</span></span>`;
-
-        let built = false;
-        header.addEventListener("click", () => {
-          if (!built){
-            buildMuniGrids(body, ccaa.provincias);
-            built = true;
-          }
-          block.classList.toggle("open");
-        });
-      }
-
-      block.appendChild(header);
-      block.appendChild(body);
-      els.listView.appendChild(block);
-    });
-
-    if (!anyRendered){
-      const empty = document.createElement("p");
-      empty.className = "empty-state";
-      empty.textContent = "Ningún municipio coincide con la búsqueda o el filtro.";
-      els.listView.appendChild(empty);
-    }
-  }
-
-  function renderMuniChip(m){
-    const cantidad = Number(COUNTS[m.id]) || 0;
-    const chip = document.createElement("div");
-    chip.className = "muni-chip" + (cantidad > 0 ? " filled" : "");
-    chip.dataset.id = m.id;
-
-    if (unlocked){
-      chip.innerHTML = `
-        <span>${m.nombre}</span>
-        <input class="muni-edit" type="number" min="0" value="${cantidad}" aria-label="Cantidad de chupitos en ${m.nombre}">
-        <button class="muni-save" type="button">Guardar</button>`;
-      const input = chip.querySelector(".muni-edit");
-      const btn = chip.querySelector(".muni-save");
-      btn.addEventListener("click", async () => {
-        const val = Math.max(0, parseInt(input.value, 10) || 0);
-        const eraPrimero = cantidad === 0 && val > 0;
-        btn.textContent = "…";
-        const ok = await saveCount(m.id, val);
-        btn.textContent = "Guardar";
-        if (ok){
-          COUNTS[m.id] = val;
-          chip.classList.toggle("filled", val > 0);
-          chip.classList.remove("just-saved");
-          void chip.offsetWidth;
-          chip.classList.add("just-saved");
-          toast(`Guardado: ${m.nombre} (${val})`);
-          updateHeaderStats();
-          if (mapInitialized) refreshMapMarkers();
-          if (eraPrimero) celebrate(chip);
-        }
-      });
-    } else {
-      chip.innerHTML = `<span>${m.nombre}</span>` + (cantidad > 0 ? `<span class="muni-badge">${cantidad}</span>` : "");
-    }
-    return chip;
-  }
-
-  // ---------- Map view ----------
-  function initMapIfNeeded(){
-    if (mapInitialized) return;
-    if (typeof L === "undefined"){
-      document.getElementById("map-container").innerHTML =
-        '<p class="empty-state">No se pudo cargar el mapa (Leaflet). Comprueba tu conexión o que no haya un bloqueador de scripts activo, y recarga la página.</p>';
-      toast("No se pudo cargar el mapa.");
-      return;
-    }
-    mapInitialized = true;
-    leafletMap = L.map("map-container", { preferCanvas: true }).setView([40.2, -3.7], 6);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; colaboradores de <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>"
-    }).addTo(leafletMap);
-    filledLayer = L.layerGroup().addTo(leafletMap);
-    pendingLayer = L.layerGroup();
-  }
-
-  function refreshMapMarkers(){
-    if (!leafletMap) return;
-    filledLayer.clearLayers();
-    pendingLayer.clearLayers();
-
-    const municipios = allMunicipios(true).filter(m => matchesFilters(m, m._ctx) && m.lat != null && m.lon != null);
-
-    municipios.forEach(m => {
-      const cantidad = Number(COUNTS[m.id]) || 0;
-      if (cantidad > 0){
-        const marker = L.circleMarker([m.lat, m.lon], {
-          radius: 7,
-          color: "#0A6B60",
-          weight: 1,
-          fillColor: "#17B8A6",
-          fillOpacity: 0.9
-        });
-        marker.bindPopup(`<p class="popup-title">${m.nombre}</p><p class="popup-count">${cantidad} chupito${cantidad === 1 ? "" : "s"}</p>`);
-        marker.addTo(filledLayer);
-      } else if (els.showPendingMap.checked){
-        const marker = L.circleMarker([m.lat, m.lon], {
-          radius: 3,
-          color: "#D8D3E4",
-          weight: 1,
-          fillColor: "#D8D3E4",
-          fillOpacity: 0.6
-        });
-        marker.bindPopup(`<p class="popup-title">${m.nombre}</p><p>Pendiente</p>`);
-        marker.addTo(pendingLayer);
-      }
-    });
-
-    if (els.showPendingMap.checked && !leafletMap.hasLayer(pendingLayer)) pendingLayer.addTo(leafletMap);
-    if (!els.showPendingMap.checked && leafletMap.hasLayer(pendingLayer)) leafletMap.removeLayer(pendingLayer);
-  }
-
-  const CONFETTI_COLORS = ["#FF5D73", "#17B8A6", "#FFC93C", "#8E7CC3"];
-  function celebrate(anchorEl){
-    const rect = anchorEl.getBoundingClientRect();
-    const originX = rect.left + rect.width / 2;
-    const originY = rect.top + rect.height / 2;
-    for (let i = 0; i < 14; i++){
-      const piece = document.createElement("div");
-      piece.className = "confetti-piece";
-      piece.style.left = originX + "px";
-      piece.style.top = originY + "px";
-      piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 60 + Math.random() * 70;
-      piece.style.setProperty("--dx", (Math.cos(angle) * dist) + "px");
-      piece.style.setProperty("--dy", (Math.sin(angle) * dist - 20) + "px");
-      piece.style.setProperty("--rot", (Math.random() * 360) + "deg");
-      document.body.appendChild(piece);
-      piece.addEventListener("animationend", () => piece.remove());
-    }
-  }
-
-  let toastTimer = null;
-  function toast(msg){
-    els.toast.textContent = msg;
-    els.toast.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => els.toast.classList.remove("show"), 3200);
-  }
-})();
+    
