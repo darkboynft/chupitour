@@ -93,6 +93,7 @@
     els.newPlaceLon = document.getElementById("new-place-lon");
     els.paisesDatalist = document.getElementById("paises-existentes");
     els.geocodeStatus = document.getElementById("geocode-status");
+    els.geocodeBtn = document.getElementById("geocode-btn");
   }
 
   function bindGlobalControls(){
@@ -146,6 +147,7 @@
     els.addPlaceCancel.addEventListener("click", closeAddPlaceModal);
     els.addPlaceConfirm.addEventListener("click", submitNewPlace);
     els.newPlaceNombre.addEventListener("blur", autocompletarLugar);
+    els.geocodeBtn.addEventListener("click", autocompletarLugar);
   }
 
   async function autocompletarLugar(){
